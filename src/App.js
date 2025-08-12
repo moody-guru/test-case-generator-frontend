@@ -1,6 +1,10 @@
 // src/App.js
+
 import React, { useState } from "react";
-import "./App.css"; // Make sure to link the CSS file
+import "./App.css";
+
+// Define the backend URL in a single place
+const backendUrl = "https://test-case-generator-api.onrender.com";
 
 function App() {
   const [repoUrl, setRepoUrl] = useState("");
@@ -17,7 +21,7 @@ function App() {
       }
 
       // API call to the backend to get the file list
-      const response = await fetch("http://localhost:3001/api/files", {
+      const response = await fetch(`${backendUrl}/api/files`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -31,9 +35,9 @@ function App() {
 
       const data = await response.json();
       setFiles(data.files);
-      setSelectedFiles([]); // Clear selected files when loading a new repo
-      setTestCaseSummaries([]); // Clear summaries as well
-      setTestCaseCode(""); // Clear test case code
+      setSelectedFiles([]);
+      setTestCaseSummaries([]);
+      setTestCaseCode("");
     } catch (error) {
       console.error("Error fetching files:", error);
       alert(error.message);
@@ -50,7 +54,7 @@ function App() {
     // Fetch content of selected files for summary generation
     const filesContent = await Promise.all(
       newSelectedFiles.map(async (file) => {
-        const response = await fetch("http://localhost:3001/api/file-content", {
+        const response = await fetch(`${backendUrl}/api/file-content`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ repoUrl, filePath: file }),
@@ -60,8 +64,6 @@ function App() {
       })
     );
 
-    // You would then send this 'filesContent' to the AI
-    // For now, we'll log it to confirm we have the content
     console.log("Selected Files Content:", filesContent);
   };
 
@@ -72,33 +74,25 @@ function App() {
         return;
       }
 
-      // We need to fetch the content of the selected files first
       const filesContent = await Promise.all(
         selectedFiles.map(async (file) => {
-          const response = await fetch(
-            "http://localhost:3001/api/file-content",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ repoUrl, filePath: file }),
-            }
-          );
+          const response = await fetch(`${backendUrl}/api/file-content`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ repoUrl, filePath: file }),
+          });
           const data = await response.json();
           return { name: file, content: data.content };
         })
       );
 
-      // API call to the backend for summaries
-      const response = await fetch(
-        "http://localhost:3001/api/generate-summaries",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ filesContent }),
-        }
-      );
+      const response = await fetch(`${backendUrl}/api/generate-summaries`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ filesContent }),
+      });
 
       if (!response.ok) {
         throw new Error("Failed to generate test case summaries.");
@@ -118,24 +112,19 @@ function App() {
       const selectedSummary = testCaseSummaries.find((s) => s.id === summaryId);
       if (!selectedSummary) return;
 
-      // You would also send the content of the files to the AI here for context
       const filesContent = await Promise.all(
         selectedFiles.map(async (file) => {
-          const response = await fetch(
-            "http://localhost:3001/api/file-content",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ repoUrl, filePath: file }),
-            }
-          );
+          const response = await fetch(`${backendUrl}/api/file-content`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ repoUrl, filePath: file }),
+          });
           const data = await response.json();
           return { name: file, content: data.content };
         })
       );
 
-      // API call to the backend for code generation
-      const response = await fetch("http://localhost:3001/api/generate-code", {
+      const response = await fetch(`${backendUrl}/api/generate-code`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -165,7 +154,7 @@ function App() {
         return;
       }
 
-      const response = await fetch("http://localhost:3001/api/create-pr", {
+      const response = await fetch(`${backendUrl}/api/create-pr`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
